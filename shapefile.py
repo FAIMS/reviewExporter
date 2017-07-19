@@ -299,10 +299,12 @@ for aenttypename, uuid, createdAt, createdBy, modifiedAt, modifiedBy,geometry in
 
 
 
-try:
-    os.remove(exportDir+'shape.out')
-except OSError:
-    pass
+#try:
+#    os.remove(exportDir+'shape.out')
+#except OSError:
+#    pass
+
+
 
 
 subprocess.call(["bash", "./format.sh", originalDir, exportDir, exportDir])
@@ -310,6 +312,7 @@ subprocess.call(["bash", "./format.sh", originalDir, exportDir, exportDir])
 
 
 updateArray = []
+reverseAttribLookup = {}
 
 for line in codecs.open(exportDir+'shape.out', 'r', encoding='utf-8').readlines():  
     out = line.replace("\n","").replace("\\r","").split("\t")
@@ -317,6 +320,7 @@ for line in codecs.open(exportDir+'shape.out', 'r', encoding='utf-8').readlines(
     if (len(out) ==4):      
         update = "update %s set %s = ? where uuid = %s;" % (clean(out[1]), clean(out[2]), out[0])
         data = (unicode(out[3].replace("\\n","\n").replace("'","''")),)
+        reverseAttribLookup[clean(out[2])] = out[2]
         # print update, data
         exportCon.execute(update, data)
 
@@ -324,9 +328,9 @@ for line in codecs.open(exportDir+'shape.out', 'r', encoding='utf-8').readlines(
 
 
 exportCon.commit()
-#files = [exportDir+'shape.sqlite3']
-files = []
-
+files = [exportDir+'shape.sqlite3']
+#files = []
+files.append(exportDir+'shape.out')
 
 for directory in importCon.execute("select distinct aenttypename, attributename from latestnondeletedaentvalue join attributekey using (attributeid) join latestnondeletedarchent using (uuid) join aenttype using (aenttypeid) where attributeisfile is not null and measure is not null"):
    makeSurePathExists("%s/%s/%s" % (exportDir,clean(directory[0]), clean(directory[1])))
@@ -420,8 +424,10 @@ select uuid, measure, freetext, certainty, attributename, aenttypename, substr(m
             #files.append(exportDir+newFilename+".json")
             #files.append(exportDir+newFilename)
 
-            photo = {'filename': originalDir+filename[1],
+            photo = {'filename': filename[1],
+                     'dir': originalDir,
                      'uuid': exifdata['uuid'],
+                     'entity': aenttypename,
                      'identifier': exifdata['identifier']
                     }
             reviewPhotoList.append(photo)
@@ -578,53 +584,104 @@ InfoValue: wibble
 #echo -n "Geometry: $geometry. ScanOrient: ${scanOrient}. "
 
 #jpglist = glob.glob("../../")
+attrib = []
+for i in range(1,5):
+    if options['Attribute%s'%(i)] != "":
+        attrib.append(clean(options['Attribute%s'%(i)]))
+
 
 if reviewPhotoList:
-    im = Image.open(reviewPhotoList[0]{'filename'})
+    print(reviewPhotoList)
+    im = Image.open(reviewPhotoList[0]['dir']+reviewPhotoList[0]['filename'])
     width, height = im.size
 
-    orientation = "Landscape"
+    orientation = "landscape"
+    pw="\pageheight"
+    ph="\pagewidth"
     if options['Rotation'] == "0" or options['Rotation'] == "180":
-        orientation = "Portrait"
-
+        orientation = "portrait"
+        pw="\pagewidth"
+        ph="\pageheight"
     
 
     tex= """
 
     \enableregime [utf]
     \mainlanguage [en]
-    \definepapersize[sheet][width=%spx,height=%spx]
-    \setuppapersize[sheet,${paper}][sheet,${paper}]
-    \switchtobodyfont[modern,48pt]
+    %%\definepapersize[sheet][width=%spx,height=%spx]
+    \setuppapersize[A4,%s][A4,%s]
+    \switchtobodyfont[modern,36pt]
 
 
-    \setupexternalfigures[directory={${imageDir}}]
+    \setupexternalfigures[directory={%s}]
 
     \setuplayout[
         backspace=0pt,
         topspace=0pt,
         header=0pt,
         footer=0pt,
-    %    width=\pagewidth,
-    %    height=\pageheight
+    %%    width=\pagewidth,
+    %%    height=\pageheight
         ]
 
 
     \setuppagenumbering[location={}]
+
+\unprotect
+\def\Stroke#1{\startoverlay{\strut\color[white]{\ss #1}}{\strut\color[black]{\ss #1}}\stopoverlay}
+\protect
     \starttext
-    %\startTEXpage\externalfigure[xx][orientation=${orientation}]{}\stopTEXpage
-    """ % (width, height, orientation, orientation)
+    
+    \definelayer[behindtext]
+\setupbackgrounds[text][setups=layer,background={behindtext,foreground}]
+
+    \starttext
+    
+    """ % (width, height, orientation, orientation, originalDir)
 
     for photo in reviewPhotoList:
-        tex = tex + "Photo: %s %s %s \n" % (photo['filename'], photo['uuid'], photo['identifier'])
+        tex = tex + """
+\startsetups layer
+\setlayer[behindtext]
+         [x=0mm,y=0mm]{%%
+         \externalfigure[{%s}][frame=off,orientation=%s, scale=10000, maxwidth=%s, maxheight=%s]{}}
+\stopsetups 
 
-    tex = tex + "\stoptext"
+\Stroke{%s}
+                """ % (photo['filename'], options['Rotation'], pw, ph, photo['identifier'])
 
-    with open('%s/test.tex' % (exportdir), 'w') as texFile:
+        if attrib:
+            for row in exportCon.execute("SELECT %s FROM %s where uuid = ?" % (', '.join(attrib), photo['entity']), [photo['uuid']]):
+                for i, col in enumerate(row):
+                    tex=tex+"""
+\Stroke{%s: %s}
+                    """ % (reverseAttribLookup[attrib[i]], col)
+                print(row)
+        print(attrib)
+
+        tex = tex + """
+        
+        \\resetlayer[behindtext]
+        \page
+        """
+
+
+        files.append("%s/%s" % (photo['dir'], photo['filename']))
+    tex = tex + "\stoptext\n"
+
+    with open('%s/review.tex' % (exportDir), 'w') as texFile:
         texFile.write(tex)
 
-    files = files + '%s/test.tex' % (exportdir)
+    
+    files.append('%s/review.tex' % (exportDir))
 
+    try:
+        output= subprocess.check_output(["bash", "review.sh", exportDir], stderr=subprocess.STDOUT)
+        print output
+    except Exception as e:
+        print e, e.output
+
+    files.append("%s/review.pdf" % (exportDir))
 files = files + glob.glob("%s/pdf/*/*" % (exportDir))
 
 
@@ -640,4 +697,5 @@ finally:
 try:
     os.remove(exportDir)
 except OSError:
+    print("Error")
     pass

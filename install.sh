@@ -2,9 +2,12 @@
 if [ "$DISTRIB_CODENAME" == "trusty"]; then
 	sudo add-apt-repository ppa:jonathonf/texlive-2016 -y
 fi
+if [ "$DISTRIB_CODENAME" == "xenial"]; then
+	sudo add-apt-repository ppa:jonathonf/texlive-2017 -y
+fi
 sudo apt update
 
-sudo apt-get install spatialite-bin libimage-exiftool-perl imagemagick scantailor libtiff-tools pdftk tesseract-ocr exactimage poppler-utils pandoc context parallel python-pil -y
+sudo apt-get install spatialite-bin libimage-exiftool-perl imagemagick scantailor libtiff-tools pdftk tesseract-ocr exactimage poppler-utils pandoc parallel context python-pil -y
 sudo mkdir -p /home/ubuntu/.parallel
 sudo touch /home/ubuntu/.parallel/will-cite
 sudo mkdir -p /root/.parallel

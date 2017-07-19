@@ -9,10 +9,10 @@
 json=`python -mjson.tool $2`
 
 
-find /tmp/ -name "tmp*"
+find  /tmp/ -maxdepth 1 -type d -wholename "/tmp/tmp*" -print0 | xargs -0 -I{} rm -rf {}
 
-
-echo "$0 $1 $2 $3 $4" > /tmp/exportRun
+echo "Hi there"
+echo -e "cd `pwd`; sudo bash ./export.sh $1 $2 $3 $4\n" > /tmp/exportRun
 
  
 # export database to csv using json inputs and pass output into export file inside download directory
@@ -46,5 +46,8 @@ echo "
 awk '{print ""$0"\n"}' /tmp/foo >> $4
 
 sed -i -e "s/^//" $4
+
+
+cat $4
 
 # generate markup and pass output to markup file
