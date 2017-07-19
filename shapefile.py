@@ -40,6 +40,7 @@ import bz2
 import tarfile
 import codecs
 import lsb_release
+from PIL import Image
 
 from collections import defaultdict
 import zipfile
@@ -323,8 +324,8 @@ for line in codecs.open(exportDir+'shape.out', 'r', encoding='utf-8').readlines(
 
 
 exportCon.commit()
-files = [exportDir+'shape.sqlite3']
-
+#files = [exportDir+'shape.sqlite3']
+files = []
 
 
 for directory in importCon.execute("select distinct aenttypename, attributename from latestnondeletedaentvalue join attributekey using (attributeid) join latestnondeletedarchent using (uuid) join aenttype using (aenttypeid) where attributeisfile is not null and measure is not null"):
@@ -342,7 +343,7 @@ filehash = defaultdict(int)
  
 exportPhotos = []
 realExportList = {}
-
+reviewPhotoList = []
 #print "* UUIDs exported:"
 for filename in importCon.execute("""
 select uuid, measure, freetext, certainty, attributename, aenttypename, substr(measure,48) as sortname
@@ -387,35 +388,43 @@ select uuid, measure, freetext, certainty, attributename, aenttypename, substr(m
                 iddata.append(id[0])
 
 
-            shutil.copyfile(originalDir+filename[1], exportDir+newFilename)
+            # shutil.copyfile(originalDir+filename[1], exportDir+newFilename)
 
-            mergedata = exifdata.copy()
-            mergedata.update(jsondata)
-            mergedata.pop("geospatialcolumn", None)
-            exifjson = {"SourceFile":exportDir+newFilename, 
-                        "UserComment": [json.dumps(mergedata)], 
-                        "ImageDescription": exifdata['identifier'], 
-                        "XPSubject": "Annotation: %s" % (filename[2]),
-                        "Keywords": iddata,
-                        "Artist": exifdata['createdBy'],
-                        "XPAuthor": exifdata['createdBy'],
-                        "Software": "FAIMS Project",
-                        "ImageID": exifdata['uuid'],
-                        "Copyright": jsondata['name']
+            # mergedata = exifdata.copy()
+            # mergedata.update(jsondata)
+            # mergedata.pop("geospatialcolumn", None)
+            # exifjson = {"SourceFile":exportDir+newFilename, 
+            #             "UserComment": [json.dumps(mergedata)], 
+            #             "ImageDescription": exifdata['identifier'], 
+            #             "XPSubject": "Annotation: %s" % (filename[2]),
+            #             "Keywords": iddata,
+            #             "Artist": exifdata['createdBy'],
+            #             "XPAuthor": exifdata['createdBy'],
+            #             "Software": "FAIMS Project",
+            #             "ImageID": exifdata['uuid'],
+            #             "Copyright": jsondata['name']
 
 
-                        }
-            with open(exportDir+newFilename+".json", "w") as outfile:
-                json.dump(exifjson, outfile)    
+            # }
+            # with open(exportDir+newFilename+".json", "w") as outfile:
+            #     json.dump(exifjson, outfile)    
 
-            if imghdr.what(exportDir+newFilename):
+            # if imghdr.what(exportDir+newFilename):
                 
-                subprocess.call(["exiftool", "-m", "-q", "-sep", "\"; \"", "-overwrite_original", "-j=%s" % (exportDir+newFilename+".json"), exportDir+newFilename])
+            #     subprocess.call(["exiftool", "-m", "-q", "-sep", "\"; \"", "-overwrite_original", "-j=%s" % (exportDir+newFilename+".json"), exportDir+newFilename])
+
+
 
             #exportPhotos.append((clean(aenttypename), attributename, newFilename, filename[0]))
             #print "    * %s" % (newFilename)
             #files.append(exportDir+newFilename+".json")
             #files.append(exportDir+newFilename)
+
+            photo = {'filename': originalDir+filename[1],
+                     'uuid': exifdata['uuid'],
+                     'identifier': exifdata['identifier']
+                    }
+            reviewPhotoList.append(photo)
         else:
             print "<b>Unable to find file %s, from uuid: %s" % (originalDir+filename[1], filename[0]) 
     except:
@@ -555,13 +564,66 @@ InfoValue: wibble
 
         f.close()
         
-        try:
-            output= subprocess.check_output(["bash", "./stitchPDF.sh", originalDir, exportDir, clean(line['identifier']), options['Rotation']], stderr=subprocess.STDOUT)
-            print output
-        except Exception as e:
-            print e, e.output
+        # try:
+        #     output= subprocess.check_output(["bash", "./stitchPDF.sh", originalDir, exportDir, clean(line['identifier']), options['Rotation']], stderr=subprocess.STDOUT)
+        #     print output
+        # except Exception as e:
+        #     print e, e.output
 
 
+# options['Rotation']
+#find ../../ -name "$3" -type d | xargs -I{} find {} -name "*.jpg" ! -name '.*' -print0 | xargs -0 -I{} identify {} | cut -d' ' -f3 | awk -F x -- '/[0-9]/ {print "\\definepapersize[sheet][width=" $1"px,height=" $2 "px]"}' | uniq > geometry
+
+#geometry=$(cat geometry)
+#echo -n "Geometry: $geometry. ScanOrient: ${scanOrient}. "
+
+#jpglist = glob.glob("../../")
+
+if reviewPhotoList:
+    im = Image.open(reviewPhotoList[0]{'filename'})
+    width, height = im.size
+
+    orientation = "Landscape"
+    if options['Rotation'] == "0" or options['Rotation'] == "180":
+        orientation = "Portrait"
+
+    
+
+    tex= """
+
+    \enableregime [utf]
+    \mainlanguage [en]
+    \definepapersize[sheet][width=%spx,height=%spx]
+    \setuppapersize[sheet,${paper}][sheet,${paper}]
+    \switchtobodyfont[modern,48pt]
+
+
+    \setupexternalfigures[directory={${imageDir}}]
+
+    \setuplayout[
+        backspace=0pt,
+        topspace=0pt,
+        header=0pt,
+        footer=0pt,
+    %    width=\pagewidth,
+    %    height=\pageheight
+        ]
+
+
+    \setuppagenumbering[location={}]
+    \starttext
+    %\startTEXpage\externalfigure[xx][orientation=${orientation}]{}\stopTEXpage
+    """ % (width, height, orientation, orientation)
+
+    for photo in reviewPhotoList:
+        tex = tex + "Photo: %s %s %s \n" % (photo['filename'], photo['uuid'], photo['identifier'])
+
+    tex = tex + "\stoptext"
+
+    with open('%s/test.tex' % (exportdir), 'w') as texFile:
+        texFile.write(tex)
+
+    files = files + '%s/test.tex' % (exportdir)
 
 files = files + glob.glob("%s/pdf/*/*" % (exportDir))
 
