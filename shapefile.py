@@ -628,8 +628,7 @@ if reviewPhotoList:
     \setuppagenumbering[location={}]
 
 \unprotect
-\def\Stroke#1{%
-    %\startoverlay%
+\def\Stroke#1{
     { \startMPcode
            draw textext("\ss\color[white]{#1}") yshifted -1;
            draw textext("\ss\color[white]{#1}") yshifted +1;
@@ -637,10 +636,7 @@ if reviewPhotoList:
            draw textext("\ss\color[white]{#1}") xshifted +1;
            draw textext("\ss #1");
 
-      \stopMPcode}
-        %{\strut\color[white]{\ss #1}}
-        %{\strut\color[black]{\ss #1}}
-    %\stopoverlay
+      \stopMPcode}   
     }
 \protect
     \starttext
