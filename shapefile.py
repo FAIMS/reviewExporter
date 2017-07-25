@@ -704,7 +704,7 @@ finally:
 
 
 try:
-    os.remove(exportDir)
-except OSError:
-    print("Error")
+    os.rmtree(exportDir)
+except OSError as e:
+    print(e)
     pass
