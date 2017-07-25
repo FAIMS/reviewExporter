@@ -610,7 +610,7 @@ if reviewPhotoList:
     \mainlanguage [en]
     %%\definepapersize[sheet][width=%spx,height=%spx]
     \setuppapersize[A4,%s][A4,%s]
-    \switchtobodyfont[modern,36pt]
+    \switchtobodyfont[modern,30pt]
 
 
     \setupexternalfigures[directory={%s}]
