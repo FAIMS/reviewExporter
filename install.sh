@@ -7,7 +7,12 @@ if [ "$DISTRIB_CODENAME" == "xenial"]; then
 fi
 sudo apt update
 
-sudo apt-get install spatialite-bin libimage-exiftool-perl imagemagick scantailor libtiff-tools pdftk tesseract-ocr exactimage poppler-utils pandoc parallel context python-pil -y
+sudo apt-get install spatialite-bin libimage-exiftool-perl imagemagick scantailor libtiff-tools pdftk tesseract-ocr exactimage poppler-utils pandoc parallel context python-pip python-pil -y
+sudo pip install -U dateparser
+
+#todo add dateparsing capabilities
+#todo sort by user, date
+a
 sudo mkdir -p /home/ubuntu/.parallel
 sudo touch /home/ubuntu/.parallel/will-cite
 sudo mkdir -p /root/.parallel

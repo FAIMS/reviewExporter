@@ -40,6 +40,7 @@ import bz2
 import tarfile
 import codecs
 import lsb_release
+import dateparser
 from PIL import Image
 
 from collections import defaultdict
@@ -199,6 +200,22 @@ arch16nFile = next((s for s in arch16nFiles if '.0.' in s), arch16nFiles[0])
 # print jsondata
 moduleName = clean(jsondata['name'])
 fileNameType = "Identifier" #Original, Unchanged, Identifier
+try:
+    if "StartDate" in options:
+        startDate=dateparser.parse(options["StartDate"])
+    else:
+        startDate=dateparser.parse('1970/1/1')
+    if "EndDate" in options:
+        endDate=dateparser.parse(options["EndDate"])
+    else:
+        endDate=dateparser.parse('today')
+    print(startDate, endDate)
+except Exception e:
+    print(e)
+    sys.exit(1)
+
+    
+
 
 images = None
 #try:

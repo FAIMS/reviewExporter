@@ -75,18 +75,18 @@ rm geometry
 #Brian plan. Copy jpgs in and rotate them first.
 
 #find ../../ScanRecord/Files/$3 -name "*.jpg"| sort -V | awk -- 'BEGIN{ FS="[/.]+"} {print "convert " $0 " " ++count ".pnm"}' /dev/stdin | bash
-find ../../ -name "$3" -type d | xargs -I{} find {} -name "*.jpg" ! -name '.*' | sort -V | awk -- 'BEGIN{ FS="[/.]+"} {print "convert \"" $0 "\" " ++count ".pnm"}' /dev/stdin | parallel --no-notice
+#find ../../ -name "$3" -type d | xargs -I{} find {} -name "*.jpg" ! -name '.*' | sort -V | awk -- 'BEGIN{ FS="[/.]+"} {print "convert \"" $0 "\" " ++count ".pnm"}' /dev/stdin | parallel --no-notice
 
 
 
-echo -n "Scantailor. "
-parallel --no-notice "scantailor-cli --orientation=${scanOrient} --despeckle=normal --normalize-illumination --color-mode=black_and_white --dewarping=auto {} ./ ; rm {}" ::: $(find . -name "*.pnm" | sort -V)
-rm -rf cache
+#echo -n "Scantailor. "
+#parallel --no-notice "scantailor-cli --orientation=${scanOrient} --despeckle=normal --normalize-illumination --color-mode=black_and_white --dewarping=auto {} ./ ; rm {}" ::: $(find . -name "*.pnm" | sort -V)
+#rm -rf cache
 
 
 
-echo -n "tiff2pdf. "
-parallel --no-notice "tiff2pdf -o '{.}.pdf' -z -u m -p 'A4' -F -c 'scanimage+unpaper+tiff2pdf+pdftk+imagemagick+tesseract+exactimage' {} ; rm {}" ::: $(find . -name "*.tif")
+#echo -n "tiff2pdf. "
+#parallel --no-notice "tiff2pdf -o '{.}.pdf' -z -u m -p 'A4' -F -c 'scanimage+unpaper+tiff2pdf+pdftk+imagemagick+tesseract+exactimage' {} ; rm {}" ::: $(find . -name "*.tif")
 
 
 
@@ -110,26 +110,26 @@ parallel --no-notice "tiff2pdf -o '{.}.pdf' -z -u m -p 'A4' -F -c 'scanimage+unp
 #	tiff2pdf -o "$name.pdf" -z -u m -p "A4" -F $name.tif	
 #	rm $file	
 #done
-echo -n "pdf14. "
+#echo -n "pdf14. "
 
-echo -n "OCR File processing"
+#echo -n "OCR File processing"
 
-pdf14=$(cat <<-'HereDoc'
-mv {} {.}.bak;
-pdftk {.}.bak dump_data > {.}.info;
-pdftk {.}.bak cat output {.}.bk2 flatten;
-convert -normalize -density 300 -depth 8 {.}.bk2 {.}.png;
-tesseract -l eng -psm 1 {.}.png {} hocr 2> /dev/null;
-TXT=$(echo {/.} | sed -e 's/_/./g;s/L/1/;s/R/2/')
-tesseract -l eng -psm 1 {.}.png stdout >> $(printf "%03f_ENG.txt" $TXT) 2>/dev/null;
-convert {.}.png {.}.jpg;
-hocr2pdf -i {.}.jpg -s -o {.}.bk2 < {}.hocr 2> /dev/null;
-pdftk {.}.bk2 update_info {.}.info output {} 2< /dev/null;
-rm -f {.}.bak {.}.bk2 {.}.info {.}.png {.}.jpg {}.hocr;
-echo -n "."
-HereDoc
-)
-parallel "$pdf14" ::: $(find . -name "*.pdf") 
+# pdf14=$(cat <<-'HereDoc'
+# mv {} {.}.bak;
+# pdftk {.}.bak dump_data > {.}.info;
+# pdftk {.}.bak cat output {.}.bk2 flatten;
+# convert -normalize -density 300 -depth 8 {.}.bk2 {.}.png;
+# tesseract -l eng -psm 1 {.}.png {} hocr 2> /dev/null;
+# TXT=$(echo {/.} | sed -e 's/_/./g;s/L/1/;s/R/2/')
+# tesseract -l eng -psm 1 {.}.png stdout >> $(printf "%03f_ENG.txt" $TXT) 2>/dev/null;
+# convert {.}.png {.}.jpg;
+# hocr2pdf -i {.}.jpg -s -o {.}.bk2 < {}.hocr 2> /dev/null;
+# pdftk {.}.bk2 update_info {.}.info output {} 2< /dev/null;
+# rm -f {.}.bak {.}.bk2 {.}.info {.}.png {.}.jpg {}.hocr;
+# echo -n "."
+# HereDoc
+# )
+# parallel "$pdf14" ::: $(find . -name "*.pdf") 
 
 #echo "pdf 1.4"
 # for file in $(find . -name "*.pdf" | sort -V); do
