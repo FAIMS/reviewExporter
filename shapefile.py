@@ -210,7 +210,7 @@ try:
     else:
         endDate=dateparser.parse('today')
     print(startDate, endDate)
-except Exception e:
+except Exception as e:
     print(e)
     sys.exit(1)
 
