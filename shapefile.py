@@ -200,16 +200,18 @@ arch16nFile = next((s for s in arch16nFiles if '.0.' in s), arch16nFiles[0])
 # print jsondata
 moduleName = clean(jsondata['name'])
 fileNameType = "Identifier" #Original, Unchanged, Identifier
+
+print("The arguments you passed in %s" % (options))
 try:
-    if "StartDate" in options:
+    if "StartDate" in options and options["StartDate"] != '':
         startDate=dateparser.parse(options["StartDate"])
     else:
         startDate=dateparser.parse('1970/1/1')
-    if "EndDate" in options:
+    if "EndDate" in options and options["EndDate"] != '':
         endDate=dateparser.parse(options["EndDate"])
     else:
         endDate=dateparser.parse('today')
-    print(startDate, endDate)
+    print("Date range being rendered is %s to %s" % (startDate, endDate))
 except Exception as e:
     print(e)
     sys.exit(1)
@@ -373,9 +375,12 @@ select uuid, measure, freetext, certainty, attributename, aenttypename, substr(m
   join latestnondeletedarchent using (uuid) 
   join aenttype using (aenttypeid) 
   join idealaent using (aenttypeid, attributeid) 
+  join createdmodifiedatby using (uuid)
+  join user using (userid)
  where attributeisfile is not null and measure is not null
- order by sortname;                                  
-                                  """):
+ and createdat between ? and ?
+ order by user.email, createdat;                                  
+                                  """, [startDate, endDate]):
     try:        
         oldPath = filename[1].split("/")
         oldFilename = oldPath[2]
@@ -721,7 +726,7 @@ finally:
 
 
 try:
-    os.rmtree(exportDir)
+    shutil.rmtree(exportDir)
 except OSError as e:
     print(e)
     pass
