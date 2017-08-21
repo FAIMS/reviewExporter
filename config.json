@@ -1,6 +1,6 @@
 {
   "name": "Review Exporter",
-  "version": 10.679999999999986,
+  "version": 11.679999999999986,
   "key": "3510a0b4-6c1a-11e7-9fd9-cb4b869bfdf1",
   "interface": [
     {
@@ -14,7 +14,7 @@
       ],
       "default": "90"
     },
-     {
+    {
       "type": "dropdown",
       "label": "Orientation",
       "items": [
@@ -22,7 +22,7 @@
         "Landscape"
       ],
       "default": "Landscape"
-    }
+    },
     {
       "type": "text",
       "label": "Attribute1",
