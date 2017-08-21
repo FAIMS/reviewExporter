@@ -43,6 +43,7 @@ import lsb_release
 import dateparser
 from PIL import Image
 
+
 from collections import defaultdict
 import zipfile
 try:
@@ -147,7 +148,21 @@ class UnicodeWriter:
         
 
 
-    
+#https://stackoverflow.com/a/30937898/263449   
+def get_out(*args):
+    from tempfile import TemporaryFile
+    from subprocess import Popen, STDOUT, check_output, CalledProcessError, PIPE
+    with TemporaryFile() as t:
+        try:
+            out = Popen(args, stderr=STDOUT, stdout=PIPE)
+            
+            return  out.communicate()[0], out.returncode
+        except CalledProcessError as e:
+            t.seek(0)
+            return e.returncode, t.read() 
+        except Exception as e:
+            print(e)
+            sys.exit(1)
 
 
 
@@ -450,13 +465,15 @@ select uuid, measure, freetext, certainty, attributename, aenttypename, substr(m
                      'dir': originalDir,
                      'uuid': exifdata['uuid'],
                      'entity': aenttypename,
+                     'author': exifdata['createdBy'],
+                     'date': exifdata['createdAtGMT'],
                      'identifier': exifdata['identifier']
                     }
             reviewPhotoList.append(photo)
         else:
             print "<b>Unable to find file %s, from uuid: %s" % (originalDir+filename[1], filename[0]) 
-    except:
-            print "<b>Unable to find file (exception thrown) %s, from uuid: %s" % (originalDir+filename[1], filename[0])    
+    except Exception as e:
+            print "<b>Unable to find file (exception thrown) %s, from uuid: %s. %s" % (originalDir+filename[1], filename[0], e)    
 
 
 exportAttributes = {}
@@ -616,23 +633,25 @@ if reviewPhotoList:
     print(reviewPhotoList)
     im = Image.open(reviewPhotoList[0]['dir']+reviewPhotoList[0]['filename'])
     width, height = im.size
-
     orientation = "landscape"
     pw="\pageheight"
     ph="\pagewidth"
-    if options['Rotation'] == "0" or options['Rotation'] == "180":
+
+    if options['Orientation'] == "Portrait":
         orientation = "portrait"
         pw="\pagewidth"
         ph="\pageheight"
+
+
     
 
     tex= """
 
     \enableregime [utf]
     \mainlanguage [en]
-    %%\definepapersize[sheet][width=%spx,height=%spx]
+    \definepapersize[sheet][width=%spx,height=%spx]
     \setuppapersize[A4,%s][A4,%s]
-    \switchtobodyfont[modern,30pt]
+    \switchtobodyfont[modern,24pt]
 
 
     \setupexternalfigures[directory={%s}]
@@ -652,13 +671,14 @@ if reviewPhotoList:
 \unprotect
 \def\Stroke#1{
     { \startMPcode
-           draw textext("\ss\color[white]{#1}") yshifted -1;
-           draw textext("\ss\color[white]{#1}") yshifted +1;
-           draw textext("\ss\color[white]{#1}") xshifted -1;
-           draw textext("\ss\color[white]{#1}") xshifted +1;
-           draw textext("\ss #1");
 
-      \stopMPcode}   
+    draw textext("\ss\color[white]{\\vbox{\hsize .9%s {#1}}}") yshifted -0.5;
+    draw textext("\ss\color[white]{\\vbox{\hsize .9%s {#1}}}") yshifted +0.5;
+    draw textext("\ss\color[white]{\\vbox{\hsize .9%s {#1}}}") xshifted -0.5;
+    draw textext("\ss\color[white]{\\vbox{\hsize .9%s {#1}}}") xshifted +0.5;
+    draw textext("\ss{\\vbox{\hsize .9%s {#1}}}");
+         
+      \stopMPcode}
     }
 \protect
     \starttext
@@ -668,18 +688,22 @@ if reviewPhotoList:
 
     \starttext
     
-    """ % (width, height, orientation, orientation, originalDir)
+    """ % (width, height, orientation, orientation, originalDir, pw, pw, pw, pw, pw)
 
     for photo in reviewPhotoList:
         tex = tex + """
 \startsetups layer
 \setlayer[behindtext]
          [x=0mm,y=0mm]{%%
-         \externalfigure[{%s}][frame=off,orientation=%s, scale=10000, maxwidth=%s, maxheight=%s]{}}
+         \externalfigure[{%s}][frame=off,orientation=%s, width=%s, maxwidth=%s, maxheight=%s]{}}
 \stopsetups 
 
 \Stroke{%s}
-                """ % (photo['filename'], options['Rotation'], pw, ph, photo['identifier'])
+
+\Stroke{%s}
+
+\Stroke{%s}
+                """ % (photo['filename'], options['Rotation'], pw, pw, ph, photo['identifier'], photo['date'],photo['author'])
 
         if attrib:
             for row in exportCon.execute("SELECT %s FROM %s where uuid = ?" % (', '.join(attrib), photo['entity']), [photo['uuid']]):
@@ -706,12 +730,18 @@ if reviewPhotoList:
     
     files.append('%s/review.tex' % (exportDir))
 
-    try:
-        output= subprocess.check_output(["bash", "review.sh", exportDir], stderr=subprocess.STDOUT)
-        print output
-    except Exception as e:
-        print e, e.output
+    message, error=get_out("bash", "review.sh", exportDir)
+    if error != 0:
+        print(message)
 
+    # try:
+    #     output= subprocess.check_output(["bash", "review.sh", exportDir], stderr=subprocess.STDOUT)
+    #     t=0, output
+    # except subprocess.CalledProcessError as e:
+    #     t = e.returncode, e.message
+    # except Exception as e:
+    #     print e, e.output
+    files.append('%s/review.log' % (exportDir))
     files.append("%s/review.pdf" % (exportDir))
 files = files + glob.glob("%s/pdf/*/*" % (exportDir))
 
