@@ -7,7 +7,7 @@ if [ "$DISTRIB_CODENAME" == "xenial" ]; then
 fi
 sudo apt update
 
-sudo apt-get install spatialite-bin libimage-exiftool-perl imagemagick scantailor libtiff-tools pdftk tesseract-ocr exactimage poppler-utils pandoc parallel context python-pip python-pil -y
+sudo apt-get install spatialite-bin libimage-exiftool-perl imagemagick scantailor libtiff-tools pdftk tesseract-ocr exactimage poppler-utils pandoc parallel context python python-regex python-pip python-pil -y
 sudo pip install -U dateparser
 
 #todo add dateparsing capabilities
