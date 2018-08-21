@@ -21,12 +21,6 @@ sudo touch /root/.parallel/will-cite
 sudo mkdir /usr/local/context
 sudo chown ubuntu /usr/local/context
 cd /usr/local/context
-wget -r http://minimals.contextgarden.net/setup/first-setup.sh
+curl http://minimals.contextgarden.net/setup/first-setup.sh -o first-setup.sh
 sh first-setup.sh --modules=all
 
-
-cat <<-HereDoc > "/home/ubuntu/.bashrc"
- export OSFONTDIR=~/.fonts:/usr/share/fonts                                                      
- export TEXROOT=/usr/local/context/tex                                         
- export PATH=/usr/local/context/tex/texmf-linux/bin:/usr/local/context/bin:$PATH
-HereDoc
