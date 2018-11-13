@@ -1,9 +1,11 @@
 # Review Exporter
 
 Custom written daily data review exporter for the TRAP Burial Mounds module, 
+
 *Created by Brian Ballsun-Stanton in 2017
 
 # How to use & set properly the TRAP Burial mounds review exporter
+
 *Written by Petra Janouchova, 18 Sept 2018
 
 While exporting from the server, use the following format for the required attributes (if left empty, the aatribute will not be taken into account, i. e. if the End date is missing, the server will export all records from the given Start date until the last existing record.)
