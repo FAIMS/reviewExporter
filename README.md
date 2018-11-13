@@ -6,7 +6,7 @@ Custom written daily data review exporter for the TRAP Burial Mounds module, cre
 
 Petra Janouchova, 18 Sept 2018
 
-While exporting from the server, use the following format for the required attributes (if left empty, the aatribute will not be taken into account, i. e. if the End date is missing, the server will export all records from the given Start date until the last record.
+While exporting from the server, use the following format for the required attributes (if left empty, the aatribute will not be taken into account, i. e. if the End date is missing, the server will export all records from the given Start date until the last existing record.)
 
 ```Rotation = 0``` (other options: 0, 90, 180, 270
 
