@@ -7,10 +7,15 @@ Custom written daily data review exporter for the TRAP Burial Mounds module, cre
 Petra Janouchova, 18 Sept 2018
 
 Rotation = 0
+
 Orientation = Landscape
+
 Attribute 1 = Height Max
+
 Attribute 2 = Diameter Max
+
 StartDate = YYYY-MM-DD
+
 EndDate = YYYY-MM-DD
 
 
